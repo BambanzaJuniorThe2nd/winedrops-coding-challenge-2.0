@@ -1,7 +1,12 @@
+import { createLogger, transports } from "winston";
 import { bootstrap as bootstrapCore, CoreConfig } from "./core";
 import { createServer, startServer, ServerConfig } from "./server";
 
 interface SuperConfig extends CoreConfig, ServerConfig {}
+
+const logger = createLogger({
+  transports: [new transports.Console()],
+});
 
 const loadConfig = (env: any): SuperConfig => {
   return {
