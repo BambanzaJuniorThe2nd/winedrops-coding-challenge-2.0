@@ -1,51 +1,29 @@
-import Fastify, { FastifyInstance } from "fastify";
-// import fastifyEnv from "@fastify/env";
+import Fastify from "fastify";
 import fastifyCors from "@fastify/cors";
-// import { wineRoutes } from "../routes";
-// import { DbConnection } from "./db";
+import { wineRoutes } from "../rest";
 import { ServerConfig, Server, ServerOptions } from "./types";
 
-// /**
-//  * Schema for the server configuration
-//  */
-// const schema = {
-//   type: 'object',
-//   required: ['PORT', 'DB_PATH'],
-//   properties: {
-//     PORT: { type: 'number', default: 3000 },
-//     DB_PATH: { type: 'string', default: './db/winedrops.db' }
-//   }
-// };
-
-
 /**
- * Creates a Fastify server instance
- * @param options Fastify server options (optional)
- * @returns FastifyInstance
+ * Starts the Fastify server
+ * @param server Server instance
+ * @param config Server configurations
  */
-export const createServer = async (
-  options: ServerOptions = {}
-): Promise<Server> => {
-  const fastify = Fastify(options);
-
-  // Register environment configuration
-//   await fastify.register(fastifyEnv, {
-//     schema,
-//     dotenv: true,
-//   });
+export const createServer = async (options: ServerOptions, serverConfig: ServerConfig): Promise<Server> => {
+  const fastify = Fastify({ logger: true }) as Server;
 
   // Register CORS
   await fastify.register(fastifyCors, {
     origin: true, // Adjust origin settings for production
   });
 
-  // Database initialization
-//   const dbConnection = new DbConnection(fastify.config.DB_PATH);
-//   await dbConnection.initialize();
-//   fastify.decorate("db", dbConnection);
+  // Attach serverConfig
+  fastify.decorate("serverConfig", serverConfig);
+
+  // Attach wineService to the Server instance
+  fastify.decorate("wineService", options.core.wineService);
 
   // Register routes
-//   fastify.register(wineRoutes);
+  fastify.register(wineRoutes);
 
   return fastify;
 };
@@ -56,13 +34,8 @@ export const createServer = async (
  * @param config Server configurations
  */
 export const startServer = async (server: Server, config: ServerConfig) => {
-  try {
-    await server.listen({ port: config.PORT });
-    server.log.info(
-      `Server is running on ${config.BASE_URL}:${config.PORT}`
-    );
-  } catch (err) {
-    server.log.error(err);
-    process.exit(1);
-  }
+  return new Promise((resolve, reject) => {
+    const serverStarted = server.listen({ host: config.BASE_URL, port: config.PORT });
+    return resolve(serverStarted);
+  });
 };

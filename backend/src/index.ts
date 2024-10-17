@@ -1,59 +1,45 @@
-// index.ts
-import Fastify from "fastify";
-import fastifyEnv from "@fastify/env";
-import fastifyCors from "@fastify/cors";
-import { wineRoutes } from "./routes";
-import { DbConnection } from "./db";
+import { createLogger, transports } from "winston";
+import { bootstrap as bootstrapCore, CoreConfig } from "./core";
+import { createServer, startServer, ServerConfig } from "./server";
+import dotenv from 'dotenv';
 
-declare module "fastify" {
-  interface FastifyInstance {
-    config: {
-      PORT: number;
-      DB_PATH: string;
-    };
-    db: DbConnection;
-  }
-}
 
-const schema = {
-  type: 'object',
-  required: ['PORT', 'DB_PATH'],
-  properties: {
-    PORT: {
-      type: 'number',
-      default: 3000
-    },
-    DB_PATH: {
-      type: 'string',
-      default: "./db/winedrops.db"
-    }
+interface SuperConfig extends CoreConfig, ServerConfig {}
+
+const logger = createLogger({
+  transports: [new transports.Console()],
+});
+
+dotenv.config();
+
+const loadConfig = (env: any): SuperConfig => {
+  console.log(env.BASE_URL);
+  return {
+    BASE_URL: env.BASE_URL || "localhost",
+    PORT: env.PORT || 3000,
+    DB_PATH: env.DB_PATH || "./db/winedrops.db",
+    API_ROOT: env.API_ROOT || "/winesdrop/api",
+  };
+};
+
+const start = async () => {
+  const config = loadConfig(process.env);
+  const envMode = process.env.NODE_ENV || "development";
+  try {
+    const core = await bootstrapCore(config);
+    logger.info("Creating server...");
+    const server = await createServer({ core }, config);
+    logger.info("Starting server...");
+    await startServer(server, config);
+    logger.info(`Server is running on ${config.BASE_URL}:${config.PORT}`)
+  } catch (e) {
+    logger.error("Application could not start", {
+      error: e,
+      message: e.message,
+    });
+    process.exit(1);
   }
 };
 
-(async () => {
-  const fastify = Fastify({ logger: true });
-
-  await fastify.register(fastifyEnv, {
-    schema: schema,
-    dotenv: true
-  });
-
-  await fastify.register(fastifyCors, {
-    origin: true  // Allow all origins in development. Adjust this in production.
-  });
-
-  const dbConnection = new DbConnection(fastify.config.DB_PATH);
-  await dbConnection.initialize();
-
-  fastify.decorate('db', dbConnection);
-
-  fastify.register(wineRoutes);
-
-  try {
-    await fastify.listen({ port: fastify.config.PORT });
-    fastify.log.info(`Server is running on http://localhost:${fastify.config.PORT}`);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-  }
-})();
+// start app
+start();
