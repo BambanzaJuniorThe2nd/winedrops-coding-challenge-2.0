@@ -1,15 +1,45 @@
-import Fastify from "fastify";
+import { createLogger, transports } from "winston";
+import { bootstrap as bootstrapCore, CoreConfig } from "./core";
+import { createServer, startServer, ServerConfig } from "./server";
+import dotenv from 'dotenv';
 
-(async () => {
-  const fastify = Fastify({});
 
-  fastify.get("/hello", async () => {
-    return { hello: "world" };
-  });
+interface SuperConfig extends CoreConfig, ServerConfig {}
 
+const logger = createLogger({
+  transports: [new transports.Console()],
+});
+
+dotenv.config();
+
+const loadConfig = (env: any): SuperConfig => {
+  console.log(env.BASE_URL);
+  return {
+    BASE_URL: env.BASE_URL || "localhost",
+    PORT: env.PORT || 3000,
+    DB_PATH: env.DB_PATH || "./db/winedrops.db",
+    API_ROOT: env.API_ROOT || "/winesdrop/api",
+  };
+};
+
+const start = async () => {
+  const config = loadConfig(process.env);
+  const envMode = process.env.NODE_ENV || "development";
   try {
-    await fastify.listen({ port: 3000 });
-  } catch (err) {
-    fastify.log.error(err);
+    const core = await bootstrapCore(config);
+    logger.info("Creating server...");
+    const server = await createServer({ core }, config);
+    logger.info("Starting server...");
+    await startServer(server, config);
+    logger.info(`Server is running on ${config.BASE_URL}:${config.PORT}`)
+  } catch (e) {
+    logger.error("Application could not start", {
+      error: e,
+      message: e.message,
+    });
+    process.exit(1);
   }
-})();
+};
+
+// start app
+start();

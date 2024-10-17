@@ -1,0 +1,1 @@
+export { WineService } from "./manager";
