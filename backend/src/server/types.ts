@@ -1,4 +1,4 @@
-import { FastifyInstance, FastifyServerOptions } from "fastify";
+import { FastifyInstance, FastifyServerOptions, FastifyRequest, FastifyReply } from "fastify";
 import { Container } from "../core";
 import { WineService } from "../core/wine";
 
@@ -18,5 +18,8 @@ declare module "fastify" {
 }
 
 export interface Server extends FastifyInstance {}
+
+export interface Request<T = any> extends FastifyRequest<T> {}
+export interface Response extends FastifyReply {}
 
 
