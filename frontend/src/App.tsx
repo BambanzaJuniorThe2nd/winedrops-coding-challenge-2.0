@@ -1,71 +1,38 @@
-import React, { useState, useEffect } from 'react';
+// src/App.tsx
+import React from 'react';
 import { WineList } from './components/WineList';
 import { SearchBar } from './components/SearchBar';
 import { SortingDropdown } from './components/SortingDropdown';
-import { api, Wine, WineResponse } from './services/api';
+import { WineProvider } from './context/WineContext';
+import { useWineContext } from './context/WineContext';
+import { useWineFetch } from './hooks/useWineFetch';
 
-const App: React.FC = () => {
-  const [wines, setWines] = useState<Wine[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<string>('revenue');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [page, setPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-
-  const fetchWines = React.useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      let response: WineResponse;
-      if (searchQuery) {
-        response = await api.searchWines(searchQuery, sortBy, page);
-      } else {
-        response = await api.getBestSellingWines(sortBy, page);
-      }
-      setWines(response.wines);
-      setTotalCount(response.totalCount);
-    } catch (err: unknown) {
-      console.log('Failed to fetch wines. Please try again.')
-      setError(err as string);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, sortBy, page]);
-  useEffect(() => {
-    fetchWines();
-  }, [sortBy, searchQuery, page, fetchWines]);
-
-  const handleSort = (newSortBy: string) => {
-    setSortBy(newSortBy);
-    setPage(1);
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setPage(1);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-  };
+const WineApp: React.FC = () => {
+  const { state } = useWineContext();
+  useWineFetch();
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Best Selling Wines</h1>
       <div className="mb-6 flex justify-between items-center">
-        <SearchBar onSearch={handleSearch} />
-        <SortingDropdown onSort={handleSort} currentSort={sortBy} />
+        <SearchBar />
+        <SortingDropdown />
       </div>
-      {loading ? (
+      {state.loading ? (
         <p>Loading...</p>
-      ) : error ? (
-        <p className="text-red-500">{error}</p>
+      ) : state.error ? (
+        <p className="text-red-500">{state.error}</p>
       ) : (
-        <WineList wines={wines} totalCount={totalCount} page={page} onPageChange={handlePageChange} />
+        <WineList />
       )}
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <WineProvider>
+    <WineApp />
+  </WineProvider>
+);
 
 export default App;

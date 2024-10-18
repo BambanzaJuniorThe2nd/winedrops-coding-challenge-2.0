@@ -1,15 +1,14 @@
+// src/components/SearchBar.tsx
 import React, { useState } from 'react';
+import { useWineContext } from '../context/WineContext';
 
-interface SearchBarProps {
-  onSearch: (query: string) => void;
-}
-
-export const SearchBar: React.FC<SearchBarProps> = ({ onSearch }) => {
+export const SearchBar: React.FC = () => {
   const [query, setQuery] = useState('');
+  const { dispatch } = useWineContext();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    dispatch({ type: 'SET_SEARCH_QUERY', payload: query });
   };
 
   return (
