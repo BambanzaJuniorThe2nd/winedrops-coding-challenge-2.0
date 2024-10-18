@@ -1,36 +1,35 @@
-import { FastifyRequest, FastifyReply } from "fastify";
-import { Server } from "../../server/types";
+import { Server, Request, Response } from "../../server/types";
 
-export async function wineRoutes(fastify: Server) {
-  const { wineService } = fastify;
-  const API_ROOT = fastify.serverConfig.API_ROOT;
+export async function wineRoutes(server: Server) {
+  const { wineService } = server;
+  const API_ROOT = server.serverConfig.API_ROOT;
   const API_ROOT__WINES = `${API_ROOT}/wines`;
 
-  fastify.get(`${API_ROOT__WINES}/best-selling`, async (request: FastifyRequest<{
+  server.get(`${API_ROOT__WINES}/best-selling`, async (request: Request<{
     Querystring: { sortBy?: string; page?: number; limit?: number }
-  }>, reply: FastifyReply) => {
+  }>, response: Response) => {
     const { sortBy = "revenue", page = 1, limit = 20 } = request.query;
     
     try {
       const wines = await wineService.getBestSelling(sortBy, page, limit);
-      reply.send(wines);
+      response.send(wines);
     } catch (err) {
-      fastify.log.error(err);
-      reply.status(500).send({ error: "Internal Server Error" });
+      server.log.error(err);
+      response.status(500).send({ error: "Internal Server Error" });
     }
   });
 
-  fastify.get(`${API_ROOT__WINES}/search`, async (request: FastifyRequest<{
+  server.get(`${API_ROOT__WINES}/search`, async (request: Request<{
     Querystring: { query?: string; sortBy?: string; page?: number; limit?: number }
-  }>, reply: FastifyReply) => {
+  }>, response: Response) => {
     const { query = "", sortBy = "revenue", page = 1, limit = 20 } = request.query;
     
     try {
       const wines = await wineService.search(query, sortBy, page, limit);
-      reply.send(wines);
+      response.send(wines);
     } catch (err) {
-      fastify.log.error(err);
-      reply.status(500).send({ error: "Internal Server Error" });
+      server.log.error(err);
+      response.status(500).send({ error: "Internal Server Error" });
     }
   });
 }
