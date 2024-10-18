@@ -1,3 +1,5 @@
+// src/components/WineList.tsx
+
 import React from 'react';
 import { Wine } from '../services/api';
 

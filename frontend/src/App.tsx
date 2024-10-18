@@ -1,3 +1,4 @@
+// src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { WineList } from './components/WineList';
 import { SearchBar } from './components/SearchBar';
@@ -32,6 +33,7 @@ const App: React.FC = () => {
       setLoading(false);
     }
   }, [searchQuery, sortBy, page]);
+
   useEffect(() => {
     fetchWines();
   }, [sortBy, searchQuery, page, fetchWines]);
