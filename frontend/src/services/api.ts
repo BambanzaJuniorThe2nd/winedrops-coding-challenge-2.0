@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:5000/winesdrop/api';
 
 export interface Wine {
   id: number;
@@ -23,14 +23,14 @@ export interface WineResponse {
 
 export const api = {
   getBestSellingWines: async (sortBy: string = 'revenue', page: number = 1, limit: number = 20): Promise<WineResponse> => {
-    const response = await axios.get(`${API_URL}/best-selling-wines`, {
+    const response = await axios.get(`${API_URL}/wines/best-selling`, {
       params: { sortBy, page, limit }
     });
     return response.data;
   },
 
   searchWines: async (query: string, sortBy: string = 'revenue', page: number = 1, limit: number = 20): Promise<WineResponse> => {
-    const response = await axios.get(`${API_URL}/search-wines`, {
+    const response = await axios.get(`${API_URL}/wines/search`, {
       params: { query, sortBy, page, limit }
     });
     return response.data;
