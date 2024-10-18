@@ -8,6 +8,14 @@ export class WineService implements WineManager {
     this.db = db;
   }
 
+  /**
+   * Retrieves the best selling wines based on the specified sorting criteria, pagination, and limit.
+   *
+   * @param sortBy - The sorting criteria, which can be "bottles", "orders", or "revenue".
+   * @param page - The page number for pagination.
+   * @param limit - The maximum number of results to return per page.
+   * @returns A Promise that resolves to a `Result` object containing the best selling wines, the total count, the current page, and the limit.
+   */
   async getBestSelling(
     sortBy: string,
     page: number,
@@ -17,49 +25,63 @@ export class WineService implements WineManager {
     let orderBy: string;
     switch (sortBy) {
       case "bottles":
-        orderBy = "total_bottles";
+        orderBy = "SUM(co.quantity)";
         break;
       case "orders":
-        orderBy = "total_orders";
+        orderBy = "COUNT(DISTINCT co.id)";
         break;
       case "revenue":
       default:
-        orderBy = "total_revenue";
+        orderBy = "SUM(co.total_amount)";
     }
 
     const query = `
-      SELECT 
-        mw.id,
-        mw.name,
-        mw.vintage,
-        SUM(co.total_amount) as total_revenue,
-        SUM(co.quantity) as total_bottles,
-        COUNT(DISTINCT co.id) as total_orders
-      FROM 
-        master_wine mw
+      WITH ranked_wines AS (
+        SELECT 
+          mw.id, 
+          mw.name, 
+          mw.vintage, 
+          SUM(co.total_amount) as total_revenue, 
+          SUM(co.quantity) as total_bottles, 
+          COUNT(DISTINCT co.id) as total_orders,
+          ROW_NUMBER() OVER (ORDER BY ${orderBy} DESC) as ranking,
+          COUNT(*) OVER () as total_count
+        FROM master_wine mw
         JOIN wine_product wp ON mw.id = wp.master_wine_id
         JOIN customer_order co ON wp.id = co.wine_product_id
-      WHERE 
-        co.status IN ('paid', 'dispatched')
-      GROUP BY 
-        mw.id, mw.name, mw.vintage
-      ORDER BY 
-        ${orderBy} DESC
+        WHERE co.status IN ('paid', 'dispatched')
+        GROUP BY mw.id, mw.name, mw.vintage
+      )
+      SELECT 
+        *, 
+        CASE WHEN ranking <= ROUND(0.1 * total_count) THEN true ELSE false END as is_top_ten,
+        CASE WHEN ranking > (total_count - ROUND(0.1 * total_count)) THEN true ELSE false END as is_bottom_ten
+      FROM ranked_wines
+      ORDER BY ranking
       LIMIT ? OFFSET ?
     `;
 
     const wines = await this.db.query(query, [limit, offset]);
-    const totalCount = await this.getTotalCount();
-    const rankedWines = this.addRankingToWines(wines, totalCount);
+    const totalCount = wines.length > 0 ? wines[0].total_count : 0;
+    const processedWines = this.formatWineResults(wines);
 
     return {
-      wines: rankedWines,
+      wines: processedWines,
       totalCount,
       page,
       limit,
     };
   }
 
+  /**
+   * Searches for wines based on the provided search query, sort criteria, and pagination parameters.
+   *
+   * @param searchQuery - The search query to filter wines by name or vintage.
+   * @param sortBy - The field to sort the wines by, one of "bottles", "orders", or "revenue".
+   * @param page - The page number for pagination.
+   * @param limit - The number of wines to return per page.
+   * @returns An object containing the paginated list of wines, the total count of wines, and the current page and limit.
+   */
   async search(
     searchQuery: string,
     sortBy: string,
@@ -70,35 +92,53 @@ export class WineService implements WineManager {
     let orderBy: string;
     switch (sortBy) {
       case "bottles":
-        orderBy = "total_bottles";
+        orderBy = "SUM(co.quantity)";
         break;
       case "orders":
-        orderBy = "total_orders";
+        orderBy = "COUNT(DISTINCT co.id)";
         break;
       case "revenue":
       default:
-        orderBy = "total_revenue";
+        orderBy = "SUM(co.total_amount)";
     }
 
     const query = `
-      SELECT 
-        mw.id,
-        mw.name,
-        mw.vintage,
-        SUM(co.total_amount) as total_revenue,
-        SUM(co.quantity) as total_bottles,
-        COUNT(DISTINCT co.id) as total_orders
-      FROM 
-        master_wine mw
+      WITH ranked_wines AS (
+        SELECT 
+          mw.id, 
+          mw.name, 
+          mw.vintage, 
+          SUM(co.total_amount) as total_revenue, 
+          SUM(co.quantity) as total_bottles, 
+          COUNT(DISTINCT co.id) as total_orders,
+          ROW_NUMBER() OVER (ORDER BY ${orderBy} DESC) as ranking,
+          COUNT(*) OVER () as total_count
+        FROM master_wine mw
         JOIN wine_product wp ON mw.id = wp.master_wine_id
         JOIN customer_order co ON wp.id = co.wine_product_id
-      WHERE 
-        co.status IN ('paid', 'dispatched')
-        AND (LOWER(mw.name) LIKE LOWER(?) OR CAST(mw.vintage AS TEXT) LIKE ?)
-      GROUP BY 
-        mw.id, mw.name, mw.vintage
-      ORDER BY 
-        ${orderBy} DESC
+        WHERE co.status IN ('paid', 'dispatched')
+          AND (LOWER(mw.name) LIKE LOWER(?) OR CAST(mw.vintage AS TEXT) LIKE ?)
+        GROUP BY mw.id, mw.name, mw.vintage
+      )
+      SELECT 
+        id,
+        name,
+        vintage,
+        total_revenue,
+        total_bottles,
+        total_orders,
+        ranking,
+        total_count,
+        CASE 
+          WHEN ranking <= ROUND(0.1 * total_count) THEN 1 
+          ELSE 0 
+        END = 1 as is_top_ten,
+        CASE 
+          WHEN ranking > (total_count - ROUND(0.1 * total_count)) THEN 1 
+          ELSE 0 
+        END = 1 as is_bottom_ten
+      FROM ranked_wines
+      ORDER BY ranking
       LIMIT ? OFFSET ?
     `;
 
@@ -108,45 +148,23 @@ export class WineService implements WineManager {
       limit,
       offset,
     ]);
-    const totalCount = await this.getTotalCount(searchQuery);
-    const rankedWines = this.addRankingToWines(wines, totalCount);
+    const totalCount = wines.length > 0 ? wines[0].total_count : 0;
+    const formattedWines = this.formatWineResults(wines);
 
-    return {
-      wines: rankedWines,
-      totalCount,
-      page,
-      limit,
-    };
+    return { wines: formattedWines, totalCount, page, limit };
   }
 
-  private async getTotalCount(searchQuery?: string): Promise<number> {
-    let query = `
-      SELECT COUNT(DISTINCT mw.id) as count
-      FROM master_wine mw
-      JOIN wine_product wp ON mw.id = wp.master_wine_id
-      JOIN customer_order co ON wp.id = co.wine_product_id
-      WHERE co.status IN ('paid', 'dispatched')
-    `;
-
-    const params = [];
-    if (searchQuery) {
-      query += ` AND (LOWER(mw.name) LIKE LOWER(?) OR CAST(mw.vintage AS TEXT) LIKE ?)`;
-      params.push(`%${searchQuery}%`, `%${searchQuery}%`);
-    }
-
-    const result = await this.db.query(query, params);
-    return result[0].count;
-  }
-
-  private addRankingToWines(wines: any[], totalCount: number): RankedWine[] {
-    const topThreshold = Math.ceil(totalCount * 0.1);
-    const bottomThreshold = Math.floor(totalCount * 0.9);
-
-    return wines.map((wine, index) => ({
-      ...wine,
-      ranking: index + 1,
-      isTopTen: index < topThreshold,
-      isBottomTen: index >= bottomThreshold,
+  private formatWineResults(wines: any[]): RankedWine[] {
+    return wines.map((wine) => ({
+      id: wine.id,
+      name: wine.name,
+      vintage: wine.vintage,
+      total_revenue: wine.total_revenue,
+      total_bottles: wine.total_bottles,
+      total_orders: wine.total_orders,
+      ranking: wine.ranking,
+      isTopTen: Boolean(wine.is_top_ten),
+      isBottomTen: Boolean(wine.is_bottom_ten),
     }));
   }
 }
