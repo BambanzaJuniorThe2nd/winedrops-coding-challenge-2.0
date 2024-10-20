@@ -126,7 +126,7 @@ cd ../frontend && yarn install
 VITE_API_URL=http://localhost:5000/winedrops/api
 ```
 
-## How to run the application locally using Docker
+## How to run the application locally without Docker
 1. cd into the backend repo and run the following command:
 ```
 yarn dev
