@@ -19,9 +19,6 @@ RUN yarn build
 # Copy the winedrops.db file to the dist folder
 RUN cp src/core/db/winedrops.db dist/core/db/winedrops.db
 
-# Debug: Check if the dist folder contains winedrops.db
-RUN ls -la dist/core/db
-
 # Second stage to run the app
 FROM node:20-alpine
 
@@ -31,7 +28,6 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 
 # Copy necessary configuration files
-COPY .env ./
 COPY package.json yarn.lock ./
 
 # Install only production dependencies

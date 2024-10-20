@@ -15,9 +15,9 @@ dotenv.config();
 const loadConfig = (env: any): SuperConfig => {
   return {
     BASE_URL: env.BASE_URL || "localhost",
-    PORT: env.PORT || 3000,
+    PORT: env.PORT || 5000,
     DB_PATH: env.DB_PATH || "./src/core/db/winedrops.db",
-    API_ROOT: env.API_ROOT || "/winesdrop/api",
+    API_ROOT: env.API_ROOT || "/winedrops/api",
   };
 };
 

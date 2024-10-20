@@ -94,3 +94,10 @@ create table customer_order (
 - Create a private repo on GitHub and push your code there
 - Invite `mikeborozdin` (`mike@winedrops.co.uk`) as a collaborator
 - Send us the link to the repo
+
+## How to run the application locally using Docker
+
+- Launch Docker
+- Clone the repo locally
+- Inside the frontend folder, create a `.env` file with the following content: `VITE_API_URL=http://localhost:5000/winedrops/api`
+- In the root folder, open the bash terminal and run the command `./start.sh`. This will build then run both the frontend and backend containers.

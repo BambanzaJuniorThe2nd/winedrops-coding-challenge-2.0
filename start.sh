@@ -22,7 +22,7 @@ stop_and_remove_container() {
 }
 
 # Variables
-NETWORK_NAME=wine_network
+NETWORK_NAME=winedrops_network
 BACKEND_IMAGE=wine_app_backend:latest
 FRONTEND_IMAGE=wine_app_frontend:latest
 BACKEND_CONTAINER=backend_container
@@ -45,10 +45,10 @@ docker network create $NETWORK_NAME
 
 # Build the latest images
 echo "Building latest backend image..."
-docker build -t $BACKEND_IMAGE ./backend
+docker build --no-cache -t $BACKEND_IMAGE ./backend
 
 echo "Building latest frontend image..."
-docker build -t $FRONTEND_IMAGE ./frontend
+docker build --no-cache -t $FRONTEND_IMAGE ./frontend
 
 # Run the backend container
 echo "Running backend container..."
@@ -62,7 +62,6 @@ docker run -d --network $NETWORK_NAME -p $BACKEND_PORT:$BACKEND_PORT \
 # Run the frontend container
 echo "Running frontend container..."
 docker run -d --network $NETWORK_NAME -p $FRONTEND_PORT:$FRONTEND_PORT \
-  -e VITE_API_URL=http://backend_container:5000/winedrops/api \
   --name $FRONTEND_CONTAINER \
   $FRONTEND_IMAGE
 
