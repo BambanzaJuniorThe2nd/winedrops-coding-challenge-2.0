@@ -11,7 +11,7 @@ import { WineService } from "./wine";
 export const bootstrap = async (config: CoreConfig): Promise<Container> => {
   // init db
   const dbManager = new DbManager(config.DB_PATH);
-  dbManager.initialize();
+  await dbManager.initialize();
 
   // init services
   const wineService = new WineService(dbManager);

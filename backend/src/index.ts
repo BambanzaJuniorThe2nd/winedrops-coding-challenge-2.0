@@ -1,7 +1,7 @@
 import { createLogger, transports } from "winston";
 import { bootstrap as bootstrapCore, CoreConfig } from "./core";
 import { createServer, startServer, ServerConfig } from "./server";
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 
 
 interface SuperConfig extends CoreConfig, ServerConfig {}
@@ -13,11 +13,10 @@ const logger = createLogger({
 dotenv.config();
 
 const loadConfig = (env: any): SuperConfig => {
-  console.log(env.BASE_URL);
   return {
     BASE_URL: env.BASE_URL || "localhost",
     PORT: env.PORT || 3000,
-    DB_PATH: env.DB_PATH || "./db/winedrops.db",
+    DB_PATH: env.DB_PATH || "./src/core/db/winedrops.db",
     API_ROOT: env.API_ROOT || "/winesdrop/api",
   };
 };
@@ -26,6 +25,7 @@ const start = async () => {
   const config = loadConfig(process.env);
   const envMode = process.env.NODE_ENV || "development";
   try {
+    logger.info(`Bootstrapping core services...`);
     const core = await bootstrapCore(config);
     logger.info("Creating server...");
     const server = await createServer({ core }, config);

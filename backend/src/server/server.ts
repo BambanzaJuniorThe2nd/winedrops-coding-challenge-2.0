@@ -12,11 +12,15 @@ export const createServer = async (
   options: ServerOptions,
   serverConfig: ServerConfig
 ): Promise<Server> => {
-  const server = Fastify({ logger: true }) as Server;
+  const server = Fastify({
+    logger: true,
+    connectionTimeout: 60000,
+    keepAliveTimeout: 60000,
+  }) as Server;
 
   // Register CORS
   await server.register(fastifyCors, {
-    origin: true, // Adjust origin settings for production
+    origin: true,
   });
 
   // Attach serverConfig
