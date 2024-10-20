@@ -1,4 +1,3 @@
-// src/components/WineList.tsx
 import React from "react";
 import { useWineContext } from "../context/WineContext";
 import { Wine } from "../services/api";
@@ -7,8 +6,8 @@ export const WineList: React.FC = () => {
   const { state, dispatch } = useWineContext();
 
   const getRowClassName = (wine: Wine) => {
-    if (wine.isTopTen) return "bg-green-100";
-    if (wine.isBottomTen) return "bg-red-100";
+    if (wine.isTopTen) return "bg-green-300";
+    if (wine.isBottomTen) return "bg-red-300";
     return "";
   };
 

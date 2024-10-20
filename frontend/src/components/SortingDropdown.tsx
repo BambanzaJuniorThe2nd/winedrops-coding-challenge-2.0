@@ -1,4 +1,3 @@
-// src/components/SortingDropdown.tsx
 import React from 'react';
 import { useWineContext } from '../context/WineContext';
 

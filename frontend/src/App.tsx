@@ -1,4 +1,3 @@
-// src/App.tsx
 import React from 'react';
 import { WineList } from './components/WineList';
 import { SearchBar } from './components/SearchBar';
