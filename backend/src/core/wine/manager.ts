@@ -117,7 +117,6 @@ export class WineService implements WineManager {
         JOIN wine_product wp ON mw.id = wp.master_wine_id
         JOIN customer_order co ON wp.id = co.wine_product_id
         WHERE co.status IN ('paid', 'dispatched')
-          AND (LOWER(mw.name) LIKE LOWER(?) OR CAST(mw.vintage AS TEXT) LIKE ?)
         GROUP BY mw.id, mw.name, mw.vintage
       )
       SELECT 
@@ -138,6 +137,7 @@ export class WineService implements WineManager {
           ELSE 0 
         END = 1 as is_bottom_ten
       FROM ranked_wines
+      WHERE (LOWER(name) LIKE LOWER(?) OR CAST(vintage AS TEXT) LIKE ?)
       ORDER BY ranking
       LIMIT ? OFFSET ?
     `;
