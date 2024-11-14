@@ -9,3 +9,10 @@ export interface Wine {
   isTopTen: boolean;
   isBottomTen: boolean;
 }
+
+export interface WineResponse {
+  wines: Wine[];
+  totalCount: number;
+  page: number;
+  limit: number;
+}
