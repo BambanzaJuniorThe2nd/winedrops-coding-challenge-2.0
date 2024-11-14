@@ -1,0 +1,13 @@
+<div>
+  <label for="sort-by" class="mr-2">Sort by:</label>
+  <select
+    id="sort-by"
+    [ngModel]="sortBy$ | async"
+    (ngModelChange)="onSortChange($event)"
+    class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="revenue">Revenue</option>
+    <option value="bottles">Bottles Sold</option>
+    <option value="orders">Number of Orders</option>
+  </select>
+</div>
