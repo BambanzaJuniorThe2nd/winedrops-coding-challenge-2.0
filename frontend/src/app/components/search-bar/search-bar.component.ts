@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
-import { FormControl } from '@angular/forms';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { WineStore } from '../../store/wine.store';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-search-bar',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './search-bar.component.html',
   styleUrl: './search-bar.component.css'
 })

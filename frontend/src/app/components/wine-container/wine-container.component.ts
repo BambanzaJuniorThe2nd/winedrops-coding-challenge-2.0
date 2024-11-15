@@ -2,18 +2,26 @@ import { Component } from '@angular/core';
 import { WineStore } from '../../store/wine.store';
 import { WineService } from '../../services/wine.service';
 import { switchMap, map } from 'rxjs/operators';
+import { CommonModule } from '@angular/common';
+import { SearchBarComponent } from '../search-bar/search-bar.component';
+import { SortingDropdownComponent } from '../sorting-dropdown/sorting-dropdown.component';
+import { WineListComponent } from '../wine-list/wine-list.component';
+import { Observable } from 'rxjs';
+import { WineState } from '../../store/wine.state';
 
 @Component({
   selector: 'app-wine-container',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, SearchBarComponent, SortingDropdownComponent, WineListComponent],
   templateUrl: './wine-container.component.html',
   styleUrl: './wine-container.component.css',
 })
 export class WineContainerComponent {
-  state$: WineStore | undefined;
+  state$: Observable<WineState> | undefined;
 
-  constructor(private wineStore: WineStore, private wineService: WineService) {}
+  constructor(private wineStore: WineStore, private wineService: WineService) {
+    this.state$ = this.wineStore.getState();
+  }
 
   ngOnInit() {
     // Subscribe to state changes and fetch data accordingly
@@ -24,6 +32,7 @@ export class WineContainerComponent {
         page: state.page
       })),
       switchMap(({ searchQuery, sortBy, page }) => {
+        console.log("")
         this.wineStore.setLoading(true);
         this.wineStore.setError(null);
 
@@ -33,6 +42,7 @@ export class WineContainerComponent {
       })
     ).subscribe({
       next: (response) => {
+        console.log(response);
         this.wineStore.setWines(response);
         this.wineStore.setLoading(false);
       },

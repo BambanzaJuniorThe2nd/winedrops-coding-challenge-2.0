@@ -3,20 +3,21 @@ import { WineStore } from '../../store/wine.store';
 import { map } from 'rxjs/operators';
 import { Wine } from '../../models/wine.model';
 import { Observable } from 'rxjs';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-wine-list',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './wine-list.component.html',
   styleUrl: './wine-list.component.css'
 })
 export class WineListComponent {
-  headers = ['Rank', 'Name', 'Vintage', 'Revenue', 'Bottles Sold', 'Orders'];
-  wines$: Observable<Wine[] | undefined>;
-  currentPage$: Observable<number | undefined>;
-  totalPages$: Observable<number | undefined>;
-  isLastPage$: Observable<boolean | undefined>;
+  headers: Array<string> = ['Rank', 'Name', 'Vintage', 'Revenue', 'Bottles Sold', 'Orders'];
+  wines$: Observable<Wine[]> | undefined;
+  currentPage$: Observable<number> | undefined;
+  totalPages$: Observable<number> | undefined;
+  isLastPage$: Observable<boolean> | undefined;
 
   constructor(private wineStore: WineStore) {
     this.wines$ = this.wineStore.getState().pipe(map(state => state.wines));
