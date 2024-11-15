@@ -1,0 +1,12 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6">Best Selling Wines</h1>
+  <div class="mb-6 flex justify-between items-center">
+    <app-search-bar></app-search-bar>
+    <app-sorting-dropdown></app-sorting-dropdown>
+  </div>
+  <ng-container *ngIf="state$ | async as state">
+    <p *ngIf="state.loading">Loading...</p>
+    <p *ngIf="state.error" class="text-red-500">{{ state.error }}</p>
+    <app-wine-list *ngIf="!state.loading && !state.error"></app-wine-list>
+  </ng-container>
+</div>
