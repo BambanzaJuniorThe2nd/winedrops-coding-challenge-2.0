@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { WineStore } from '../../store/wine.store';
 import { map } from 'rxjs/operators';
 import { Wine } from '../../models/wine.model';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-wine-list',
@@ -12,10 +13,10 @@ import { Wine } from '../../models/wine.model';
 })
 export class WineListComponent {
   headers = ['Rank', 'Name', 'Vintage', 'Revenue', 'Bottles Sold', 'Orders'];
-  wines$: any;
-  currentPage$: any;
-  totalPages$: any;
-  isLastPage$: any;
+  wines$: Observable<Wine[] | undefined>;
+  currentPage$: Observable<number | undefined>;
+  totalPages$: Observable<number | undefined>;
+  isLastPage$: Observable<boolean | undefined>;
 
   constructor(private wineStore: WineStore) {
     this.wines$ = this.wineStore.getState().pipe(map(state => state.wines));
