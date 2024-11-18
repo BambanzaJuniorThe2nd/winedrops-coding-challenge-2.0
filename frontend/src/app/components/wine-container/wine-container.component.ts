@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { WineStore } from '../../store/wine.store';
 import { WineService } from '../../services/wine.service';
-import { switchMap, map } from 'rxjs/operators';
+import { switchMap, map, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { SortingDropdownComponent } from '../sorting-dropdown/sorting-dropdown.component';
 import { WineListComponent } from '../wine-list/wine-list.component';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { WineState } from '../../store/wine.state';
 
 @Component({
@@ -16,23 +16,29 @@ import { WineState } from '../../store/wine.state';
   templateUrl: './wine-container.component.html',
   styleUrl: './wine-container.component.css',
 })
-export class WineContainerComponent {
-  state$: Observable<WineState> | undefined;
+export class WineContainerComponent implements OnInit, OnDestroy {
+  state$: Observable<WineState>;
+  private destroy$ = new Subject<void>();
 
   constructor(private wineStore: WineStore, private wineService: WineService) {
     this.state$ = this.wineStore.getState();
   }
 
   ngOnInit() {
-    // Subscribe to state changes and fetch data accordingly
     this.wineStore.getState().pipe(
+      takeUntil(this.destroy$),
       map(state => ({
         searchQuery: state.searchQuery,
         sortBy: state.sortBy,
         page: state.page
       })),
+      distinctUntilChanged((prev, curr) => {
+        // Only trigger new API call if these values actually changed
+        return prev.searchQuery === curr.searchQuery &&
+               prev.sortBy === curr.sortBy &&
+               prev.page === curr.page;
+      }),
       switchMap(({ searchQuery, sortBy, page }) => {
-        console.log("")
         this.wineStore.setLoading(true);
         this.wineStore.setError(null);
 
@@ -42,7 +48,6 @@ export class WineContainerComponent {
       })
     ).subscribe({
       next: (response) => {
-        console.log(response);
         this.wineStore.setWines(response);
         this.wineStore.setLoading(false);
       },
@@ -51,5 +56,10 @@ export class WineContainerComponent {
         this.wineStore.setLoading(false);
       }
     });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

@@ -20,9 +20,18 @@ export const createServer = async (
 
   // Register CORS
   await server.register(fastifyCors, {
-    origin: true,
-  });
-
+  origin: (origin, cb) => {
+    // Allow requests with no origin (like from Postman) and specific origins
+    if (!origin || origin.includes('http://localhost')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Not allowed"), false);
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true, // Allow cookies if needed
+});
   // Attach serverConfig
   server.decorate("serverConfig", serverConfig);
 
