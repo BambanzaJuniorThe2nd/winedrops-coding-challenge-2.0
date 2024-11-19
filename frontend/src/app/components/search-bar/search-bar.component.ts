@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { WineStore } from '../../store/wine.store';
 import { CommonModule } from '@angular/common';
 
@@ -8,15 +8,21 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './search-bar.component.html',
-  styleUrl: './search-bar.component.css'
+  styleUrl: './search-bar.component.css',
 })
-
 export class SearchBarComponent {
-  searchControl = new FormControl('');
+  searchForm: FormGroup;
 
-  constructor(private wineStore: WineStore) {}
+  constructor(private wineStore: WineStore) {
+    this.searchForm = new FormGroup({
+      search: new FormControl('')
+    });
+  }
 
-  onSubmit() {
-    this.wineStore.setSearchQuery(this.searchControl.value || '');
+  onSubmit(): void {
+    if (this.searchForm.valid) {
+      console.log('Search submitted:', this.searchForm.get('search')?.value);
+      this.wineStore.setSearchQuery(this.searchForm.get('search')?.value || '');
+    }
   }
 }

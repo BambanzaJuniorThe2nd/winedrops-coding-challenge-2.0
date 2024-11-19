@@ -24,6 +24,8 @@ export class WineService {
 
       return this.http.get<WineResponse>(`${this.API_URL}/wines/best-selling`, {
         params,
+        responseType: 'json',
+        withCredentials: true,
       });
   }
 
@@ -41,6 +43,8 @@ export class WineService {
 
     return this.http.get<WineResponse>(`${this.API_URL}/wines/search`, {
       params,
+      responseType: 'json',
+      withCredentials: true,
     });
   }
 }
