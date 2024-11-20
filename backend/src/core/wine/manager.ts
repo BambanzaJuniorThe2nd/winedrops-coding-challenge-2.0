@@ -82,6 +82,77 @@ export class WineService implements WineManager {
    * @param limit - The number of wines to return per page.
    * @returns An object containing the paginated list of wines, the total count of wines, and the current page and limit.
    */
+  // async search(
+  //   searchQuery: string,
+  //   sortBy: string,
+  //   page: number,
+  //   limit: number
+  // ): Promise<Result> {
+  //   const offset = (page - 1) * limit;
+  //   let orderBy: string;
+  //   switch (sortBy) {
+  //     case "bottles":
+  //       orderBy = "SUM(co.quantity)";
+  //       break;
+  //     case "orders":
+  //       orderBy = "COUNT(DISTINCT co.id)";
+  //       break;
+  //     case "revenue":
+  //     default:
+  //       orderBy = "SUM(co.total_amount)";
+  //   }
+
+  //   const query = `
+  //     WITH ranked_wines AS (
+  //       SELECT
+  //         mw.id,
+  //         mw.name,
+  //         mw.vintage,
+  //         SUM(co.total_amount) as total_revenue,
+  //         SUM(co.quantity) as total_bottles,
+  //         COUNT(DISTINCT co.id) as total_orders,
+  //         ROW_NUMBER() OVER (ORDER BY ${orderBy} DESC) as ranking,
+  //         COUNT(*) OVER () as total_count
+  //       FROM master_wine mw
+  //       JOIN wine_product wp ON mw.id = wp.master_wine_id
+  //       JOIN customer_order co ON wp.id = co.wine_product_id
+  //       WHERE co.status IN ('paid', 'dispatched')
+  //       GROUP BY mw.id, mw.name, mw.vintage
+  //     )
+  //     SELECT
+  //       id,
+  //       name,
+  //       vintage,
+  //       total_revenue,
+  //       total_bottles,
+  //       total_orders,
+  //       ranking,
+  //       total_count,
+  //       CASE
+  //         WHEN ranking <= ROUND(0.1 * total_count) THEN 1
+  //         ELSE 0
+  //       END = 1 as is_top_ten,
+  //       CASE
+  //         WHEN ranking > (total_count - ROUND(0.1 * total_count)) THEN 1
+  //         ELSE 0
+  //       END = 1 as is_bottom_ten
+  //     FROM ranked_wines
+  //     WHERE (LOWER(name) LIKE LOWER(?) OR CAST(vintage AS TEXT) LIKE ?)
+  //     ORDER BY ranking
+  //     LIMIT ? OFFSET ?
+  //   `;
+
+  //   const wines = await this.db.query(query, [
+  //     `%${searchQuery}%`,
+  //     `%${searchQuery}%`,
+  //     limit,
+  //     offset,
+  //   ]);
+  //   const totalCount = wines.length > 0 ? wines[0].total_count : 0;
+  //   const formattedWines = this.formatWineResults(wines);
+
+  //   return { wines: formattedWines, totalCount, page, limit };
+  // }
   async search(
     searchQuery: string,
     sortBy: string,
@@ -103,33 +174,28 @@ export class WineService implements WineManager {
     }
 
     const query = `
-      WITH base_wines AS (
+      WITH global_rankings AS (
         SELECT 
           mw.id, 
           mw.name, 
           mw.vintage, 
           SUM(co.total_amount) as total_revenue, 
           SUM(co.quantity) as total_bottles, 
-          COUNT(DISTINCT co.id) as total_orders
+          COUNT(DISTINCT co.id) as total_orders,
+          ROW_NUMBER() OVER (ORDER BY ${orderBy} DESC) as ranking,
+          COUNT(*) OVER () as global_count
         FROM master_wine mw
         JOIN wine_product wp ON mw.id = wp.master_wine_id
         JOIN customer_order co ON wp.id = co.wine_product_id
         WHERE co.status IN ('paid', 'dispatched')
         GROUP BY mw.id, mw.name, mw.vintage
-        HAVING LOWER(mw.name) LIKE LOWER(?) OR CAST(mw.vintage AS TEXT) LIKE ?
       ),
-      ranked_wines AS (
+      filtered_wines AS (
         SELECT 
           *,
-          ROW_NUMBER() OVER (ORDER BY 
-            CASE 
-              WHEN '${sortBy}' = 'bottles' THEN total_bottles
-              WHEN '${sortBy}' = 'orders' THEN total_orders
-              ELSE total_revenue
-            END DESC
-          ) as ranking,
           COUNT(*) OVER () as total_count
-        FROM base_wines
+        FROM global_rankings
+        WHERE LOWER(name) LIKE LOWER(?) OR CAST(vintage AS TEXT) LIKE ?
       )
       SELECT 
         id,
@@ -141,14 +207,14 @@ export class WineService implements WineManager {
         ranking,
         total_count,
         CASE 
-          WHEN ranking <= ROUND(0.1 * total_count) THEN 1 
+          WHEN ranking <= ROUND(0.1 * global_count) THEN 1 
           ELSE 0 
         END = 1 as is_top_ten,
         CASE 
-          WHEN ranking > (total_count - ROUND(0.1 * total_count)) THEN 1 
+          WHEN ranking > (global_count - ROUND(0.1 * global_count)) THEN 1 
           ELSE 0 
         END = 1 as is_bottom_ten
-      FROM ranked_wines
+      FROM filtered_wines
       ORDER BY ranking
       LIMIT ? OFFSET ?
     `;
