@@ -103,21 +103,33 @@ export class WineService implements WineManager {
     }
 
     const query = `
-      WITH ranked_wines AS (
+      WITH base_wines AS (
         SELECT 
           mw.id, 
           mw.name, 
           mw.vintage, 
           SUM(co.total_amount) as total_revenue, 
           SUM(co.quantity) as total_bottles, 
-          COUNT(DISTINCT co.id) as total_orders,
-          ROW_NUMBER() OVER (ORDER BY ${orderBy} DESC) as ranking,
-          COUNT(*) OVER () as total_count
+          COUNT(DISTINCT co.id) as total_orders
         FROM master_wine mw
         JOIN wine_product wp ON mw.id = wp.master_wine_id
         JOIN customer_order co ON wp.id = co.wine_product_id
         WHERE co.status IN ('paid', 'dispatched')
         GROUP BY mw.id, mw.name, mw.vintage
+        HAVING LOWER(mw.name) LIKE LOWER(?) OR CAST(mw.vintage AS TEXT) LIKE ?
+      ),
+      ranked_wines AS (
+        SELECT 
+          *,
+          ROW_NUMBER() OVER (ORDER BY 
+            CASE 
+              WHEN '${sortBy}' = 'bottles' THEN total_bottles
+              WHEN '${sortBy}' = 'orders' THEN total_orders
+              ELSE total_revenue
+            END DESC
+          ) as ranking,
+          COUNT(*) OVER () as total_count
+        FROM base_wines
       )
       SELECT 
         id,
@@ -137,7 +149,6 @@ export class WineService implements WineManager {
           ELSE 0 
         END = 1 as is_bottom_ten
       FROM ranked_wines
-      WHERE (LOWER(name) LIKE LOWER(?) OR CAST(vintage AS TEXT) LIKE ?)
       ORDER BY ranking
       LIMIT ? OFFSET ?
     `;
