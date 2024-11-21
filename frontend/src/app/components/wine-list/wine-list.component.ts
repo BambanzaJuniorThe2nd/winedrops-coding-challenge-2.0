@@ -10,7 +10,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './wine-list.component.html',
-  styleUrl: './wine-list.component.css'
+  styleUrl: './wine-list.component.css',
 })
 export class WineListComponent {
   private destroy$ = new Subject<void>();

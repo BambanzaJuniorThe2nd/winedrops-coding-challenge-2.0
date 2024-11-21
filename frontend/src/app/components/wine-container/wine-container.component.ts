@@ -59,8 +59,10 @@ export class WineContainerComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => this.wineStore.setWines(response),
-        error: (error) =>
-          this.wineStore.setError('Failed to fetch wines. Please try again.'),
+        error: (error) => {
+          console.error('Error fetching wines:', error);
+          this.wineStore.setError('Failed to fetch wines. Please try again.');
+        }
       });
   }
 

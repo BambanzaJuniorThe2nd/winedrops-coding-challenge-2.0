@@ -51,18 +51,19 @@ export class WineStore {
   }
 
   setSearchQuery(searchQuery: string) {
-    console.log(searchQuery);
-    this.updateState({
-      searchQuery,
-      page: 1,  // Reset to first page
-      loading: true
-    });
+    if (this.state.getValue().searchQuery !== searchQuery) {
+      this.updateState({
+        searchQuery,
+        page: 1,  // Reset to first page
+        loading: true
+      });
+    }
+
   }
 
   setPage(page: number) {
     const totalPages = Math.ceil(this.state.getValue().totalCount / this.PAGE_SIZE);
     if (page >= 1 && page <= totalPages) {
-      console.log('Setting current page:', page);
       this.updateState({
         page,
         loading: true

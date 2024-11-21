@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { WineStore } from '../../store/wine.store';
 import { CommonModule } from '@angular/common';
 
@@ -21,7 +21,6 @@ export class SearchBarComponent {
 
   onSubmit(): void {
     if (this.searchForm.valid) {
-      console.log('Search submitted:', this.searchForm.get('search')?.value);
       this.wineStore.setSearchQuery(this.searchForm.get('search')?.value || '');
     }
   }
