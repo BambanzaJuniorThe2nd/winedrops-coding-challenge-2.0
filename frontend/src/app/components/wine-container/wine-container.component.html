@@ -4,9 +4,16 @@
     <app-search-bar></app-search-bar>
     <app-sorting-dropdown></app-sorting-dropdown>
   </div>
-  <ng-container *ngIf="state$ | async as state">
-    <p *ngIf="state.loading">Loading...</p>
-    <p *ngIf="state.error" class="text-red-500">{{ state.error }}</p>
-    <app-wine-list *ngIf="!state.loading && !state.error"></app-wine-list>
-  </ng-container>
+  @if (loading()) {
+    <p>Loading...</p>
+  }
+  @if (error()) {
+    <p class="text-red-500">{{ error() }}</p>
+  }
+  @if (!loading() && !error()) {
+    <app-wine-list></app-wine-list>
+  }
+  @if (wines().length === 0 && !loading()) {
+    <p class="text-center text-gray-500">No wines found.</p>
+  }
 </div>

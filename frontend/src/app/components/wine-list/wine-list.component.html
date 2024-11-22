@@ -11,7 +11,10 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let wine of wines$ | async" [ngClass]="getRowClassName(wine)">
+      <tr
+        *ngFor="let wine of wineStore.wines()"
+        [ngClass]="getRowClassName(wine)"
+      >
         <td class="px-6 py-4 whitespace-nowrap">{{ wine.ranking }}</td>
         <td class="px-6 py-4 whitespace-nowrap">{{ wine.name }}</td>
         <td class="px-6 py-4 whitespace-nowrap">{{ wine.vintage }}</td>
@@ -26,15 +29,17 @@
   <div class="mt-4 flex justify-between">
     <button
       (click)="previousPage()"
-      [disabled]="(currentPage$ | async) === 1"
+      [disabled]="wineStore.currentPage() === 1"
       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
     >
       Previous
     </button>
-    <span> Page {{ currentPage$ | async }} of {{ totalPages$ | async }} </span>
+    <span>
+      Page {{ wineStore.currentPage() }} of {{ wineStore.totalPages() }}
+    </span>
     <button
       (click)="nextPage()"
-      [disabled]="isLastPage$ | async"
+      [disabled]="wineStore.currentPage() === wineStore.totalPages()"
       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
     >
       Next

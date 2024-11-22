@@ -1,9 +1,7 @@
 import { Component } from '@angular/core';
 import { WineStore } from '../../store/wine.store';
-import { map } from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-sorting-dropdown',
@@ -12,15 +10,8 @@ import { Observable } from 'rxjs';
   templateUrl: './sorting-dropdown.component.html',
   styleUrl: './sorting-dropdown.component.css'
 })
-
 export class SortingDropdownComponent {
-  private readonly wineStore: WineStore;
-  sortBy$: Observable<string> | undefined;
-
-  constructor(wineStore: WineStore) {
-    this.wineStore = wineStore;
-    this.sortBy$ = this.wineStore.getState().pipe(map(state => state.sortBy));
-  }
+  constructor(public wineStore: WineStore) {}
 
   onSortChange(value: string) {
     this.wineStore.setSortBy(value);

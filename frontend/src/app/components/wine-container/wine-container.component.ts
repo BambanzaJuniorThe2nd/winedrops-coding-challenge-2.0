@@ -1,18 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, DestroyRef, OnInit, effect, inject } from '@angular/core';
 import { WineStore } from '../../store/wine.store';
 import { WineService } from '../../services/wine.service';
-import {
-  switchMap,
-  map,
-  distinctUntilChanged,
-  takeUntil,
-} from 'rxjs/operators';
 import { CommonModule } from '@angular/common';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { SortingDropdownComponent } from '../sorting-dropdown/sorting-dropdown.component';
 import { WineListComponent } from '../wine-list/wine-list.component';
-import { Observable, Subject } from 'rxjs';
-import { WineState } from '../../store/wine.state';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-wine-container',
@@ -26,48 +19,49 @@ import { WineState } from '../../store/wine.state';
   templateUrl: './wine-container.component.html',
   styleUrl: './wine-container.component.css',
 })
-export class WineContainerComponent implements OnInit, OnDestroy {
-  state$: Observable<WineState>;
-  private destroy$ = new Subject<void>();
+export class WineContainerComponent implements OnInit {
+  private wineStore = inject(WineStore);
+  private wineService = inject(WineService);
+  private destroyRef = inject(DestroyRef);
 
-  constructor(private wineStore: WineStore, private wineService: WineService) {
-    this.state$ = this.wineStore.getState();
-  }
+  constructor() {
+    // This effect will run whenever any of the signals (i.e., searchQuery, sortBy, page) change
+    effect(() => {
+      // Access only the specific signals we care about
+      const searchQuery = this.wineStore.searchQuery();
+      const sortBy = this.wineStore.sortBy();
+      const page = this.wineStore.currentPage();
 
-  ngOnInit() {
-    this.wineStore
-      .getState()
-      .pipe(
-        takeUntil(this.destroy$),
-        map((state) => ({
-          searchQuery: state.searchQuery,
-          sortBy: state.sortBy,
-          page: state.page,
-        })),
-        distinctUntilChanged(
-          (prev, curr) =>
-            prev.searchQuery === curr.searchQuery &&
-            prev.sortBy === curr.sortBy &&
-            prev.page === curr.page
-        ),
-        switchMap(({ searchQuery, sortBy, page }) => {
-          this.wineStore.setLoading(true);
-          return searchQuery
-            ? this.wineService.searchWines(searchQuery, sortBy, page)
-            : this.wineService.getBestSellingWines(sortBy, page);
-        })
-      )
-      .subscribe({
-        next: (response) => this.wineStore.setWines(response),
+      this.wineStore.setLoading(true);
+      const fetchWines = searchQuery
+        ? this.wineService.searchWines(searchQuery, sortBy, page)
+        : this.wineService.getBestSellingWines(sortBy, page);
+
+      fetchWines.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: (response) => {
+          this.wineStore.setWines(response);
+          this.wineStore.setLoading(false);
+        },
         error: (error) => {
-          console.error('Error fetching wines:', error);
-          this.wineStore.setError('Failed to fetch wines. Please try again.');
-        }
+          this.wineStore.setError(error);
+          this.wineStore.setLoading(false);
+        },
       });
+    }, { allowSignalWrites: true })
   }
 
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
+  ngOnInit(): void {}
+
+  // Add public methods for template access if needed
+  public loading() {
+    return this.wineStore.loading();
+  }
+
+  public error() {
+    return this.wineStore.error();
+  }
+
+  public wines() {
+    return this.wineStore.wines();
   }
 }

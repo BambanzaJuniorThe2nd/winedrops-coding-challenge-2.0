@@ -1,6 +1,7 @@
-<form [formGroup]="searchForm" (ngSubmit)="onSubmit()" class="flex">
+<form (ngSubmit)="onSubmit()" class="flex">
   <input
-    formControlName="search"
+    [(ngModel)]="searchQuery"
+    name="searchQuery"
     type="text"
     placeholder="Search wines..."
     class="px-4 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
