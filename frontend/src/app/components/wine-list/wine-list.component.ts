@@ -15,7 +15,7 @@ export class WineListComponent {
 
   constructor(private wineStore: WineStore) {}
 
-  getRowClassName(wine: any): string {
+  getRowClassName(wine: Wine): string {
     if (wine.isTopTen) return 'bg-green-300';
     if (wine.isBottomTen) return 'bg-red-300';
     return '';
