@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { WineStore } from '../../store/wine.store';
 import { CommonModule } from '@angular/common';
+import { Wine } from '../../models/wine.model';
 
 @Component({
   selector: 'app-wine-list',
@@ -12,12 +13,24 @@ import { CommonModule } from '@angular/common';
 export class WineListComponent {
   headers = ['Rank', 'Name', 'Vintage', 'Revenue', 'Bottles Sold', 'Orders'];
 
-  constructor(public wineStore: WineStore) {}
+  constructor(private wineStore: WineStore) {}
 
   getRowClassName(wine: any): string {
     if (wine.isTopTen) return 'bg-green-300';
     if (wine.isBottomTen) return 'bg-red-300';
     return '';
+  }
+
+  wines(): Wine[] {
+    return this.wineStore.wines();
+  }
+
+  currentPage(): number {
+    return this.wineStore.currentPage();
+  }
+
+  totalPages(): number {
+    return this.wineStore.totalPages();
   }
 
   previousPage(): void {
