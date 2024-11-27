@@ -11,7 +11,12 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './sorting-dropdown.component.css'
 })
 export class SortingDropdownComponent {
-  constructor(public wineStore: WineStore) {}
+  constructor(private wineStore: WineStore) {}
+
+  // Getter that always returns the latest value from wineStore
+  get sortBy() {
+    return this.wineStore.sortBy();
+  }
 
   onSortChange(value: string) {
     this.wineStore.setSortBy(value);
