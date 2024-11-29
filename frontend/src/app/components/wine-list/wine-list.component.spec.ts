@@ -264,6 +264,54 @@ describe('WineListComponent', () => {
     expect(component.totalPages()).toEqual(9);
   });
 
+  it('should call wineStore.previousPage when previous button is clicked and the current page is not the first page', () => {
+    wineStoreSpy.currentPage.and.returnValue(2);
+    fixture.detectChanges();
+
+    const previousPageButton = fixture.debugElement.query(
+      By.css('#prev-page-button')
+    ).nativeElement;;
+    previousPageButton.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(wineStoreSpy.previousPage).toHaveBeenCalled();
+    expect(wineStoreSpy.previousPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not call wineStore.previousPage when previous button is clicked and the current page is the first page', () => {
+    const previousPageButton = fixture.debugElement.query(
+      By.css('#prev-page-button')
+    ).nativeElement;
+    previousPageButton.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(wineStoreSpy.previousPage).not.toHaveBeenCalled();
+  });
+
+  it('should call wineStore.nextPage when next button is clicked and current page is not the last page', () => {
+    const nextPageButton = fixture.debugElement.query(
+      By.css('#next-page-button')
+    ).nativeElement;;
+    nextPageButton.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(wineStoreSpy.nextPage).toHaveBeenCalled();
+    expect(wineStoreSpy.nextPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not call wineStore.nextPage when next button is clicked and the current page is the last page', () => {
+    wineStoreSpy.currentPage.and.returnValue(9);
+    fixture.detectChanges();
+
+    const nextPageButton = fixture.debugElement.query(
+      By.css('#next-page-button')
+    ).nativeElement;
+    nextPageButton.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+
+    expect(wineStoreSpy.nextPage).not.toHaveBeenCalled();
+  });
+
   it('should display in table rows and apply appropriate css classes to list of wine items', () => {
     const tbodyElement = fixture.debugElement.query(By.css('tbody'));
     const tableRows = tbodyElement.queryAll(By.css('tr'));
@@ -358,6 +406,17 @@ describe('WineListComponent', () => {
     );
     expect(paginationText.nativeElement.textContent.trim()).toEqual(
       'Page 1 of 9'
+    );
+  });
+
+  it('should change the pagination text when the current page changes', () => {
+    wineStoreSpy.currentPage.and.returnValue(2);
+    fixture.detectChanges();
+    const paginationText = fixture.debugElement.query(
+      By.css('#pagination-text')
+    );
+    expect(paginationText.nativeElement.textContent.trim()).toEqual(
+      'Page 2 of 9'
     );
   });
 });

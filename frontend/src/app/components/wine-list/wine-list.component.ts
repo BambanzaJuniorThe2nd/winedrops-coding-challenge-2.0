@@ -34,10 +34,14 @@ export class WineListComponent {
   }
 
   previousPage(): void {
-    this.wineStore.previousPage();
+    if (this.currentPage() > 1) {
+      this.wineStore.previousPage();
+    }
   }
 
   nextPage(): void {
-    this.wineStore.nextPage();
+    if (this.currentPage() < this.totalPages()) {
+      this.wineStore.nextPage();
+    }
   }
 }
