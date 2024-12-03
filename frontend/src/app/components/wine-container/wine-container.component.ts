@@ -6,6 +6,7 @@ import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { SortingDropdownComponent } from '../sorting-dropdown/sorting-dropdown.component';
 import { WineListComponent } from '../wine-list/wine-list.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { WineResponse } from '../../models/wine.model';
 
 @Component({
   selector: 'app-wine-container',
@@ -38,12 +39,13 @@ export class WineContainerComponent implements OnInit {
         : this.wineService.getBestSellingWines(sortBy, page);
 
       fetchWines.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: (response) => {
+        next: (response: WineResponse) => {
           this.wineStore.setWines(response);
           this.wineStore.setLoading(false);
         },
-        error: (error) => {
-          this.wineStore.setError(error);
+        error: (error: Error) => {
+          console.log(error.message);
+          this.wineStore.setError(error.message);
           this.wineStore.setLoading(false);
         },
       });

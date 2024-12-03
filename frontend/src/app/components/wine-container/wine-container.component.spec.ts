@@ -1,11 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WineContainerComponent } from './wine-container.component';
 import { WineStore } from '../../store/wine.store';
-import { Wine } from '../../models/wine.model';
+import { Wine, WineResponse } from '../../models/wine.model';
 import { SearchBarComponent } from '../search-bar/search-bar.component';
 import { SortingDropdownComponent } from '../sorting-dropdown/sorting-dropdown.component';
 import { WineListComponent } from '../wine-list/wine-list.component';
 import { WineService } from '../../services/wine.service';
+import { of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 
 describe('WineContainerComponent', () => {
   let component: WineContainerComponent;
@@ -234,26 +236,66 @@ describe('WineContainerComponent', () => {
       isBottomTen: false,
     },
   ];
+  let wineResponse: WineResponse = {
+    wines,
+    totalCount: 167,
+    page: 1,
+    limit: 20,
+  };
 
   beforeEach(async () => {
     // Create a spy object for winestore
-    wineStoreSpy = jasmine.createSpyObj('WineStore', [], {
-      wines: jasmine.createSpy('wines').and.returnValue(wines),
-      sortBy: jasmine.createSpy('sortBy').and.returnValue('revenue'),
-      currentPage: jasmine.createSpy('currentPage').and.returnValue(1),
-      totalPages: jasmine.createSpy('totalPages').and.returnValue(9),
-      previousPage: jasmine
-        .createSpy('previousPage')
-        .and.returnValue(undefined),
-      nextPage: jasmine.createSpy('nextPage').and.returnValue(undefined),
-      searchQuery: jasmine.createSpy('searchQuery').and.returnValue(''),
-      setLoading: jasmine.createSpy('setLoading').and.returnValue(undefined),
-      loading: jasmine.createSpy('loading').and.returnValue(false),
-      error: jasmine.createSpy('error').and.returnValue(null),
-    });
+    wineStoreSpy = jasmine.createSpyObj(
+      'WineStore',
+      [
+        'wines',
+        'sortBy',
+        'currentPage',
+        'totalPages',
+        'previousPage',
+        'nextPage',
+        'searchQuery',
+        'searchQuery',
+        'setLoading',
+        'setWines',
+        'setError',
+        'loading',
+        'error',
+      ],
+      {
+        wines: jasmine.createSpy('wines').and.returnValue(wines),
+        sortBy: jasmine.createSpy('sortBy').and.returnValue('revenue'),
+        currentPage: jasmine.createSpy('currentPage').and.returnValue(1),
+        totalPages: jasmine.createSpy('totalPages').and.returnValue(9),
+        previousPage: jasmine
+          .createSpy('previousPage')
+          .and.returnValue(undefined),
+        nextPage: jasmine.createSpy('nextPage').and.returnValue(undefined),
+        searchQuery: jasmine
+          .createSpy('searchQuery')
+          .and.returnValue(undefined),
+        setLoading: jasmine.createSpy('setLoading').and.returnValue(undefined),
+        setWines: jasmine.createSpy('setWines').and.returnValue(undefined),
+        setError: jasmine.createSpy('setError').and.returnValue(undefined),
+        loading: jasmine.createSpy('loading').and.returnValue(false),
+        error: jasmine.createSpy('error').and.returnValue(null),
+      }
+    );
 
     // Create a spy object for wineService
-    wineServiceSpy = jasmine.createSpyObj('WineService', ['searchWines', 'getBestSellingWines']);
+    wineServiceSpy = jasmine.createSpyObj(
+      'WineService',
+      ['searchWines', 'getBestSellingWines'],
+      {
+        // Configure the spy methods to return an Observable
+        searchWines: jasmine
+          .createSpy('searchWines')
+          .and.returnValue(of(wineResponse)),
+        getBestSellingWines: jasmine
+          .createSpy('getBestSellingWines')
+          .and.returnValue(of(wineResponse)),
+      }
+    );
 
     // Configure testing module
     await TestBed.configureTestingModule({
@@ -263,7 +305,10 @@ describe('WineContainerComponent', () => {
         WineListComponent,
         WineContainerComponent,
       ],
-      providers: [{ provide: WineStore, useValue: wineStoreSpy }, { provide: WineService, useValue: wineServiceSpy }],
+      providers: [
+        { provide: WineStore, useValue: wineStoreSpy },
+        { provide: WineService, useValue: wineServiceSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(WineContainerComponent);
@@ -273,5 +318,57 @@ describe('WineContainerComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should set loading to true when fetching wines', () => {
+    expect(wineStoreSpy.setLoading).toHaveBeenCalledWith(true);
+
+    wineStoreSpy.loading.and.returnValue(true);
+    fixture.detectChanges();
+
+    expect(wineStoreSpy.loading()).toBe(true);
+  });
+
+  it('should set loading to false after fetching wines', () => {
+    expect(wineStoreSpy.setLoading).toHaveBeenCalledWith(false);
+  });
+
+  it('should fetch wines on initialization', () => {
+    expect(wineServiceSpy.getBestSellingWines).toHaveBeenCalledWith(
+      'revenue',
+      1
+    );
+    expect(wineStoreSpy.setWines).toHaveBeenCalledWith(wineResponse);
+    expect(component.wines()).toEqual(wineResponse.wines);
+  });
+
+  it('should handle error when fetching wines', () => {
+    // Create a mock error response
+    const errorMessage =
+      'Http failure response for http://127.0.0.1:5000/winedrops/api/wines/best-selling: 0 Unknown Error';
+    const errorResponse = new HttpErrorResponse({
+      error: new Error(errorMessage),
+      status: 0,
+      statusText: 'Unknown Error',
+    });
+
+    // Reset the spy method setWines before the test
+    wineStoreSpy.setWines.calls.reset();
+
+    // Configure the spy to return a thrown error Observable
+    wineServiceSpy.getBestSellingWines.and.returnValue(
+      throwError(() => errorResponse)
+    );
+
+    // Manually set the error message in the WineStore
+    wineStoreSpy.setError(errorMessage);
+
+    // Force change detection to trigger the effect
+    fixture.detectChanges();
+
+    // Verify error handling methods were called
+    expect(wineStoreSpy.setWines).not.toHaveBeenCalled();
+    expect(wineStoreSpy.setError).toHaveBeenCalledWith(errorMessage);
+    expect(wineStoreSpy.setLoading).toHaveBeenCalledWith(false);
   });
 });
